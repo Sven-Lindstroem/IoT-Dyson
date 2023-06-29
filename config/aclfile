@@ -1,0 +1,8 @@
+
+topic read devices/#
+
+
+user admin
+topic read $SYS/#
+topic readwrite devices/#
+
