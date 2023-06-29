@@ -113,8 +113,8 @@ PORT = 1883
 
 # mosquitto ip address and credentials
 mosquitto_server = config["MQTT broker IP"]
-mosquitto_user = "admin"
-mosquitto_key = "arthur"                       
+mosquitto_user = config["MQTT broker user"]
+mosquitto_key = config["MQTT broker key"]                 
 
 # the topic the dash bored publishes too
 commands_topic = "devices/command"                                        
