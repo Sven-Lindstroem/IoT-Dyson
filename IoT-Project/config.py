@@ -13,5 +13,5 @@ config = {
 
     "MQTT broker IP": "Your broker IP",
     "MQTT broker user": "admin",
-    "MQTT broker key" : "Your broker poassword"
+    "MQTT broker key" : "Your broker password"
 }
