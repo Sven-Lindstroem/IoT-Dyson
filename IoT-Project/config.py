@@ -1,6 +1,6 @@
 wifi_secrets = {
     "ssid": "Your wifi ssid",
-    "password": "Your wifi ssid",
+    "password": "Your wifi password",
 }
 
 config = {
