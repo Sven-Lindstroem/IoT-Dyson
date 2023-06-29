@@ -1,6 +1,6 @@
 wifi_secrets = {
-    "ssid" : "Your wifi ssid",
-    "password" : "Your wifi ssid",
+    "ssid": "Your wifi ssid",
+    "password": "Your wifi ssid",
 }
 
 config = {
@@ -11,5 +11,7 @@ config = {
 
     "maximum time intervall": "60000",
 
-    "MQTT broker IP": "Your broker IP"
+    "MQTT broker IP": "Your broker IP",
+    "MQTT broker user": "Your broker username",
+    "MQTT broker key" : "Your broker poassword"
 }
