@@ -1,0 +1,1 @@
+{"speed": 8, "is_on": false}
