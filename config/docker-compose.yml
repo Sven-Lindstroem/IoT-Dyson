@@ -6,7 +6,7 @@ networks:
 
 volumes:
     tig-data:
-
+    mosquitto-data:
 services:
     influxdb:
         image: influxdb:1.8.6
@@ -31,11 +31,12 @@ services:
         environment:
             GF_SECURITY_ADMIN_USER: king
             GF_SECURITY_ADMIN_PASSWORD: arthur
+            GF_INSTALL_PLUGINS: https://github.com/geeks-r-us/mqtt-panel/releases/download/v1.0.7/geeksrus-mqtt-panel-1.0.7.zip;mqtt-panel
         networks: 
             - tig-net
         volumes:
             - tig-data:/var/lib/grafana
-        restart: always        
+        restart: always   
 
     telegraf:
         image: telegraf:1.19.0
@@ -59,8 +60,11 @@ services:
         ports:
             - 1883:1883
             - 9001:9001
+        networks:
+            - tig-net
         volumes:
             - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
             - ./passwd:/mosquitto/config/passwd
-            - ./aclfile:/mosquitto/config/aclfile     
-
+            - ./aclfile:/mosquitto/config/aclfile
+            - mosquitto-data:/mosquitto/data
+            - mosquitto-data:/mosquitto/log 
