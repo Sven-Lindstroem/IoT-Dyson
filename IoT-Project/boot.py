@@ -9,26 +9,19 @@ def do_connect():
     # checl if already connected
     if not wlan.isconnected():          
         print("connecting to network...")
-
-        # activate network interface
         wlan.active(True)
-
         # Your WiFi credential
         wlan.connect(wifi_secrets["ssid"], wifi_secrets["password"])
-
         print("waiting for connection...", end='')
 
-        # checl if it is connected otherwise wait
+        # wait for connection
         while not wlan.isconnected() and wlan.status() >= 0:
             print('.',end='')
             sleep(1)
-
-    # pritn the IP assigned by router
-    ip = wlan.ifconfig()[0]
-    print('\nConnected on {}'.format(ip))
-    return ip
+    # print the IP assigned by the router
+    print('\nConnected on {}'.format(wlan.ifconfig()[0]))
 
 try:
-    ip = do_connect()
+    do_connect()
 except KeyboardInterrupt:
     print("Keyboard interrupt")
