@@ -4,6 +4,6 @@
 
 - config folder contains the configuration for the docker-compose
 
-Dyson-
+- Grafana-Dashboard file contains the Grafana dashboard settings.
 
 The full tutorial is available [here](https://hackmd.io/IKziMexCSVyvbWrRPY4GBw?view)
