@@ -10,13 +10,13 @@ import time
 import dht
 from config import config
 
-autonomous_mode = False
 state_changed = False
 
 # Load the state of the Dyson from the file
 current_state = {
     "speed": 1,
-    "is_on": False
+    "is_on": False,
+    "auto": False
 }
 
 try:
@@ -44,14 +44,15 @@ def main():
         "temp":temp,
         "speed":current_state["speed"],
         "on_off":int(current_state["is_on"]),
-        "auto":int(autonomous_mode)
+        "auto":int(current_state["auto"])
     }))
     max_time_intervall = int(config["maximum time interval"]) 
     last_data_sent = time.ticks_ms()
+
     while True:
         temp = getTemp()
         mqtt_client.check_msg()       
-        if autonomous_mode == True:         
+        if current_state["auto"]:         
             autonomous(temp)  
             sleep_time = 60                                      
         else:                              
@@ -62,7 +63,7 @@ def main():
                 "temp":temp,
                 "speed":current_state["speed"],
                 "on_off":int(current_state["is_on"]),
-                "auto":int(autonomous_mode)
+                "auto":int(current_state["auto"])
             }))
             last_data_sent = time.ticks_ms()
             state_changed = False
@@ -71,7 +72,6 @@ def main():
             sendData(ujson.dumps({"temp":temp}))
             last_data_sent = time.ticks_ms()
         time.sleep(sleep_time)
-
 
 # Check if the required IR signal files are present
 def check_ir_signal_files():
@@ -105,10 +105,11 @@ client_ID = ubinascii.hexlify(machine.unique_id())
 mosquitto_server = config["MQTT broker IP"]
 mosquitto_user = config["MQTT broker user"]
 mosquitto_key = config["MQTT broker key"]
-commands_topic = "devices/command"
-data_topic = "devices/data"
 
-mqtt_client = MQTTClient(client_ID, mosquitto_server, PORT, mosquitto_user, mosquitto_key, keepalive=100)
+data_topic = "devices/data"
+commands_topic = "devices/command"
+
+mqtt_client = MQTTClient(client_ID, mosquitto_server, PORT, mosquitto_user, mosquitto_key, keepalive=120)
 
 def set_up_mqtt():
     print(f"Begin connection with MQTT Broker :: {mosquitto_server}")
@@ -125,22 +126,23 @@ def set_up_mqtt():
 def sub_cb(topic, msg):
     print("Received message:", msg)
     global state_changed
-    global autonomous_mode
-    
     # If autonomous_mode mode is ON only take action if the off signal is sent 
-    if autonomous_mode == True:
+    if current_state["auto"]:
         if msg == b'auto_on':
             return
-        elif msg == b'auto_off': 
-            autonomous_mode = False
+        elif msg == b'auto_off':
+            print("autonomous mode is now off")
+            current_state["auto"] = False
+            
             state_changed = True
             # Set the rotary sensor to the current speed    
             r.set(value = current_state["speed"])
     else:
         if msg == b"power":                    
             ON_OFF()
-        elif msg == b"auto_on":                
-            autonomous_mode = True
+        elif msg == b"auto_on":      
+            print("autonomous mode is now on")
+            current_state["auto"] = True       
             state_changed = True
         elif msg == b"auto_off":
             return
@@ -153,10 +155,10 @@ def indicator_light():
     LED_Red.value(int(not current_state["is_on"]))
 
 # Autonomous mode
-dyson_on_temp = config["dyson on temp"]
-dyson_off_temp = config["dyson off temp"]
-medium_break_point = config["medium break point"]
-fast_break_point = config["fast break point"]
+dyson_on_temp = int(config["dyson on temp"])
+dyson_off_temp = int(config["dyson off temp"])
+medium_break_point = int(config["medium break point"])
+fast_break_point = int(config["fast break point"])
 
 def autonomous(temp):
     # checks breakpoint and takes action accordingly 
@@ -228,7 +230,6 @@ def speed_change(direction, speed_difference):
         print("Error: Failed to open IR signal file.")
 
 # Send the ON/OFF IR signal to control the Dyson
-
 def ON_OFF():
     try:
         with open('ir_signals/on_off.py', 'r') as f:
@@ -244,7 +245,6 @@ def ON_OFF():
         indicator_light()   
     except OSError:
         print("Error: Failed to open IR signal file.")
-
 
 # Update the state file with the current Dyson state
 def update_state():
