@@ -58,7 +58,7 @@
       },
       "gridPos": {
         "h": 9,
-        "w": 4,
+        "w": 7,
         "x": 0,
         "y": 1
       },
@@ -142,7 +142,7 @@
       "gridPos": {
         "h": 5,
         "w": 3,
-        "x": 4,
+        "x": 7,
         "y": 1
       },
       "id": 4,
@@ -200,13 +200,98 @@
     {
       "datasource": null,
       "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 10,
+        "y": 1
+      },
+      "id": 18,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "none"
+      },
+      "pluginVersion": "7.5.9",
+      "targets": [
+        {
+          "groupBy": [],
+          "measurement": "pico",
+          "orderByTime": "ASC",
+          "policy": "autogen",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "auto"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "last"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "topic",
+              "operator": "=",
+              "value": "devices/data"
+            }
+          ]
+        }
+      ],
+      "title": "Autonomous mode",
+      "type": "stat"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
       "gridPos": {
         "h": 2,
         "w": 1,
-        "x": 4,
+        "x": 7,
         "y": 6
       },
       "id": 14,
@@ -288,11 +373,11 @@
       "gridPos": {
         "h": 2,
         "w": 2,
-        "x": 5,
+        "x": 10,
         "y": 6
       },
       "id": 16,
-      "mode": "Switch",
+      "mode": "Button",
       "model": {
         "maxValue": 100,
         "minValue": 0,
@@ -353,7 +438,7 @@
       "timeShift": null,
       "transparent": true,
       "type": "geeksrus-mqtt-panel",
-      "value": 10,
+      "value": "auto_power",
       "viewModel": {
         "maxValue": "100",
         "minValue": "0",
@@ -368,8 +453,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 4,
+        "h": 3,
+        "w": 7,
         "x": 0,
         "y": 10
       },
@@ -436,7 +521,7 @@
       "title": "Speed change",
       "transparent": true,
       "type": "geeksrus-mqtt-panel",
-      "value": 10,
+      "value": "7",
       "viewModel": {
         "maxValue": "10",
         "minValue": "1",
@@ -451,7 +536,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 13
       },
       "id": 6,
       "panels": [],
@@ -508,7 +593,7 @@
         "h": 8,
         "w": 10,
         "x": 0,
-        "y": 15
+        "y": 14
       },
       "id": 8,
       "options": {
@@ -556,7 +641,7 @@
               },
               {
                 "params": [],
-                "type": "median"
+                "type": "mode"
               },
               {
                 "params": [
@@ -630,5 +715,5 @@
   "timezone": "",
   "title": "Dyson",
   "uid": "lAp1yN9Vk",
-  "version": 7
+  "version": 17
 }
