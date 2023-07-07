@@ -128,24 +128,20 @@ def sub_cb(topic, msg):
     global state_changed
     # If autonomous_mode mode is ON only take action if the off signal is sent 
     if current_state["auto"]:
-        if msg == b'auto_on':
-            return
-        elif msg == b'auto_off':
+        if msg == b'auto_power':
             print("autonomous mode is now off")
             current_state["auto"] = False
-            
             state_changed = True
             # Set the rotary sensor to the current speed    
             r.set(value = current_state["speed"])
+
     else:
         if msg == b"power":                    
             ON_OFF()
-        elif msg == b"auto_on":      
+        elif msg == b"auto_power":      
             print("autonomous mode is now on")
             current_state["auto"] = True       
             state_changed = True
-        elif msg == b"auto_off":
-            return
         elif current_state["is_on"]:      
             r.set(value=int(msg))
 
@@ -198,7 +194,7 @@ r = RotaryIRQ(pin_num_clk=21,
 
 def rotary():
     speed_new = r.value()
-    if speed_new >= 1 and speed_new <= 10 and current_state["speed"] != speed_new:
+    if current_state["speed"] != speed_new and speed_new >= 1 and speed_new <= 10:
         change_speed_to(speed_new)
 
 def change_speed_to(speed_new):
