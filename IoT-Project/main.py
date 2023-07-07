@@ -16,7 +16,7 @@ state_changed = False
 current_state = {
     "speed": 1,
     "is_on": False,
-    "auto": False
+    "auto_on": False
 }
 
 try:
@@ -24,14 +24,14 @@ try:
         current_state = ujson.load(f)
         # prints the state for debugging
         print("Dyson state is: ", current_state)
-except FileNotFoundError:
+except:
     print("Failed to load Dyson state file. Using default state.")
 
 # Create instances of temperature sensor, pins, and LED indicators
 temperature_sensor = dht.DHT11(Pin(28))
 push_button = Pin(27, Pin.IN, Pin.PULL_UP)
-LED_Green = Pin(12, Pin.OUT)
-LED_Red = Pin(13, Pin.OUT) 
+LED_green = Pin(12, Pin.OUT)
+LED_red = Pin(13, Pin.OUT) 
 ir = Player(Pin(26))
 
 def main():
@@ -39,48 +39,49 @@ def main():
     set_up_mqtt()
     indicator_light()   
     global state_changed
-    temp = getTemp()
-    sendData(ujson.dumps({
+    temp = get_temp()
+    send_data(ujson.dumps({
         "temp":temp,
         "speed":current_state["speed"],
         "on_off":int(current_state["is_on"]),
-        "auto":int(current_state["auto"])
+        "auto":int(current_state["auto_on"])
     }))
     max_time_intervall = int(config["maximum time interval"]) 
     last_data_sent = time.ticks_ms()
 
     while True:
-        temp = getTemp()
+        temp = get_temp()
         mqtt_client.check_msg()       
-        if current_state["auto"]:         
+        if current_state["auto_on"]:         
             autonomous(temp)  
             sleep_time = 60                                      
         else:                              
             manual()
             sleep_time = 3                            
         if state_changed:                        
-            sendData(ujson.dumps({
+            send_data(ujson.dumps({
                 "temp":temp,
                 "speed":current_state["speed"],
                 "on_off":int(current_state["is_on"]),
-                "auto":int(current_state["auto"])
+                "auto":int(current_state["auto_on"])
             }))
             last_data_sent = time.ticks_ms()
             state_changed = False
+            update_state()
         # checks how long since the last temp has been sent
         elif (time.ticks_ms() - last_data_sent) > max_time_intervall:                 
-            sendData(ujson.dumps({"temp":temp}))
+            send_data(ujson.dumps({"temp":temp}))
             last_data_sent = time.ticks_ms()
         time.sleep(sleep_time)
 
 # Check if the required IR signal files are present
 def check_ir_signal_files():
-    file_names = ['ir_signals/on_off.py','ir_signals/speed_down.py','ir_signals/speed_up.py']
+    file_names = ['on_off.py','speed_down.py','speed_up.py']
     for file in file_names:
         try:
-            with open(file, 'r'):
+            with open("ir_signals/{}".format(file), 'r'):
                 continue
-        except FileNotFoundError:
+        except:
             print("{} file not found".format(file))
             acquire_ir_signal(file)
             time.sleep(1)
@@ -88,15 +89,15 @@ def check_ir_signal_files():
 # Acquire IR signals from the remote control
 def acquire_ir_signal(file_name):
     prompt = {
-        'ir_signals/on_off.py': "Please point the remote at the IR receiver an press the POWER button",
-        'ir_signals/speed_down.py': "Please point the remote at the IR receiver an press the DOWN button",
-        'ir_signals/speed_up.py': "Please point the remote at the IR receiver an press the UP button"
+        'on_off.py': "POWER",
+        'speed_down.py': "DOWN",
+        'speed_up.py': "UP"
     }
     # prompt the user press the button corresponding to the file
-    print(prompt[file_name])
+    print("Please point the remote at the IR receiver an press the {} button".format(prompt[file_name]))
     lst = test(Pin(16, Pin.IN))
     # creat the file and save the signal
-    with open(file_name, 'w') as f:
+    with open("ir_signals/{}".format(file_name), 'w') as f:
         ujson.dump(lst, f)
 
 # Set up MQTT client
@@ -127,28 +128,23 @@ def sub_cb(topic, msg):
     print("Received message:", msg)
     global state_changed
     # If autonomous_mode mode is ON only take action if the off signal is sent 
-    if current_state["auto"]:
-        if msg == b'auto_power':
-            print("autonomous mode is now off")
-            current_state["auto"] = False
-            state_changed = True
-            # Set the rotary sensor to the current speed    
-            r.set(value = current_state["speed"])
+    if msg == b'auto_power':
+        print("autonomous mode is now off")
+        current_state["auto_on"] =  not current_state["auto_on"]
+        state_changed = True
+        # Set the rotary sensor to the current speed    
+        rotation.set(value = current_state["speed"])
 
-    else:
+    if not current_state["auto_on"]:
         if msg == b"power":                    
             ON_OFF()
-        elif msg == b"auto_power":      
-            print("autonomous mode is now on")
-            current_state["auto"] = True       
-            state_changed = True
         elif current_state["is_on"]:      
-            r.set(value=int(msg))
+            rotation.set(value=int(msg))
 
 # On-Off indication light
 def indicator_light():
-    LED_Green.value(int(current_state["is_on"]))
-    LED_Red.value(int(not current_state["is_on"]))
+    LED_green.value(int(current_state["is_on"]))
+    LED_red.value(int(not current_state["is_on"]))
 
 # Autonomous mode
 dyson_on_temp = int(config["dyson on temp"])
@@ -181,7 +177,7 @@ def manual():
         rotary()  
 
 # Rotation sensor setup
-r = RotaryIRQ(pin_num_clk=21,
+rotation = RotaryIRQ(pin_num_clk=21,
               pin_num_dt=22,
               min_val=1,
               max_val=10,
@@ -193,7 +189,7 @@ r = RotaryIRQ(pin_num_clk=21,
               )
 
 def rotary():
-    speed_new = r.value()
+    speed_new = rotation.value()
     if current_state["speed"] != speed_new and speed_new >= 1 and speed_new <= 10:
         change_speed_to(speed_new)
 
@@ -212,6 +208,8 @@ def change_speed_to(speed_new):
 
 # Send the corresponding IR signals for the given speed difference
 def speed_change(direction, speed_difference):
+    global state_changed
+    state_changed = True
     file_path ='ir_signals/{}.py'.format(direction)
     try:
         with open(file_path, 'r') as f:
@@ -221,12 +219,13 @@ def speed_change(direction, speed_difference):
         for x in range(speed_difference):             
             ir.play(lst)
             time.sleep_ms(500)
-        update_state()
     except OSError:
         print("Error: Failed to open IR signal file.")
 
 # Send the ON/OFF IR signal to control the Dyson
 def ON_OFF():
+    global state_changed
+    state_changed = True
     try:
         with open('ir_signals/on_off.py', 'r') as f:
             lst = ujson.load(f)
@@ -235,17 +234,14 @@ def ON_OFF():
         time.sleep_ms(50)
 
         current_state['is_on'] = not current_state["is_on"]
-        r.set(value=current_state["speed"])
+        rotation.set(value=current_state["speed"])
 
-        update_state()
         indicator_light()   
     except OSError:
         print("Error: Failed to open IR signal file.")
 
 # Update the state file with the current Dyson state
 def update_state():
-    global state_changed
-    state_changed = True
     try:
         with open('dyson_state.py', 'w') as f:
             ujson.dump(current_state, f)        
@@ -255,12 +251,12 @@ def update_state():
         print("Error updating state:", e)
 
 # Send data to the MQTT broker
-def sendData(data_msg):
+def send_data(data_msg):
     print("data sent")
     mqtt_client.publish(topic=data_topic, msg=data_msg) 
 
 # Get temperature from the sensor
-def getTemp():
+def get_temp():
     temperature_sensor.measure()
     return temperature_sensor.temperature()
 
